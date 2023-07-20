@@ -117,29 +117,3 @@ def patch(module, name, cls):
     backup = getattr(module, name)
     setattr(module, "_%s" % name, backup)
     setattr(module, name, cls)
-
-
-patch(nn, "Module", PatchedModule)
-patch(cpp_extension, "_get_build_directory", _get_build_directory)
-
-Optimizer = optim.Optimizer
-for name, cls in inspect.getmembers(optim):
-    if inspect.isclass(cls) and issubclass(cls, Optimizer):
-        cls = core.make_configurable(cls, ignore_args=("params",))
-        cls = R.register("optim.%s" % name)(cls)
-        patch(optim, name, cls)
-
-Scheduler = scheduler._LRScheduler
-for name, cls in inspect.getmembers(scheduler):
-    if inspect.isclass(cls) and issubclass(cls, Scheduler):
-        cls = core.make_configurable(cls, ignore_args=("optimizer",))
-        cls = R.register("scheduler.%s" % name)(cls)
-        setattr(optim, name, cls)
-
-Dataset = dataset.Dataset
-for name, cls in inspect.getmembers(dataset):
-    if inspect.isclass(cls) and issubclass(cls, Dataset):
-        cls = core.make_configurable(cls)
-        cls = R.register("dataset.%s" % name)(cls)
-        patch(dataset, name, cls)
-importlib.reload(torch.utils.data)

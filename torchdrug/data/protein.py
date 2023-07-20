@@ -216,11 +216,11 @@ class Protein(Molecule):
                 if pdbinfo.GetInsertionCode() not in cls.alphabet2id:
                     warnings.warn(f"Fail to create the protein. Unknown insertion code {pdbinfo.GetInsertionCode()}.")
                     return None
-                if pdbinfo.GetChainId() not in cls.alphabet2id:
+                if pdbinfo.GetChainId().upper() not in cls.alphabet2id:
                     warnings.warn(f"Fail to create the protein. Unknown chain id {pdbinfo.GetChainId()}.")
                     return None
                 insertion_code.append(cls.alphabet2id[pdbinfo.GetInsertionCode()])
-                chain_id.append(cls.alphabet2id[pdbinfo.GetChainId()])
+                chain_id.append(cls.alphabet2id[pdbinfo.GetChainId().upper()])
                 feature = []
                 for name in residue_feature:
                     func = R.get("features.residue.%s" % name)
@@ -308,7 +308,7 @@ class Protein(Molecule):
     @classmethod
     @utils.deprecated_alias(node_feature="atom_feature", edge_feature="bond_feature", graph_feature="mol_feature")
     def from_pdb(cls, pdb_file, atom_feature="default", bond_feature="default", residue_feature="default",
-                 mol_feature=None, kekulize=False):
+                 mol_feature=None, kekulize=False, sanitize=True):
         """
         Create a protein from a PDB file.
 
@@ -322,10 +322,11 @@ class Protein(Molecule):
                 Note this only affects the relation in ``edge_list``.
                 For ``bond_type``, aromatic bonds are always stored explicitly.
                 By default, aromatic bonds are stored.
+            sanitize (bool, optional): sanitize protein by RDKit rules. Defaults to true    
         """
         if not os.path.exists(pdb_file):
             raise FileNotFoundError("No such file `%s`" % pdb_file)
-        mol = Chem.MolFromPDBFile(pdb_file)
+        mol = Chem.MolFromPDBFile(pdb_file, sanitize=sanitize)
         if mol is None:
             raise ValueError("RDKit cannot read PDB file `%s`" % pdb_file)
         return cls.from_molecule(mol, atom_feature, bond_feature, residue_feature, mol_feature, kekulize)
